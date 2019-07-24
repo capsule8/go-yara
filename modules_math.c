@@ -39,11 +39,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // log2 is not defined by math.h in VC++
 
+#define log2 log2_
  // A fast approximate log2 function:
  // https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastlog.h
  // Having it here removes the need to link to the math library and
- // reduces our depenencies while being good enough for entropy
- // detection.
+ // reduces our depenencies while being good enough for entropy detection
 static double log2 (double x)
 {
     union { float f; uint32_t i; } vx = { x };

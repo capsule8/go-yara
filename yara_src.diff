@@ -34,11 +34,11 @@ index 759112e..eca8d35 100644
  
 -#if defined(_MSC_VER) && _MSC_VER < 1800
 -static double log2(double n)
++#define log2 log2_
 + // A fast approximate log2 function:
 + // https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastlog.h
 + // Having it here removes the need to link to the math library and
-+ // reduces our depenencies while being good enough for entropy
-+ // detection.
++ // reduces our depenencies while being good enough for entropy detection
 +static double log2 (double x)
  {
 -  return log(n) / log(2.0);
