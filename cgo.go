@@ -6,7 +6,6 @@
 
 package yara
 
-// #cgo !no_pkg_config,!yara_static  pkg-config: yara
-// #cgo !no_pkg_config,yara_static   pkg-config: --static yara
-// #cgo no_pkg_config                LDFLAGS:    -lyara
+// #cgo CFLAGS: -D_FILE_OFFSET_BITS=64
+// #cgo LDFLAGS:
 import "C"
