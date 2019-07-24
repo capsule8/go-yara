@@ -395,8 +395,10 @@ struct RE_NODE
 
   RE_CLASS* re_class;
 
-  RE_NODE* left;
-  RE_NODE* right;
+  RE_NODE* children_head;
+  RE_NODE* children_tail;
+  RE_NODE* prev_sibling;
+  RE_NODE* next_sibling;
 
   uint8_t* forward_code;
   uint8_t* backward_code;
@@ -413,7 +415,6 @@ struct RE_CLASS
 struct RE_AST
 {
   uint32_t flags;
-  uint16_t levels;
   RE_NODE* root_node;
 };
 
@@ -627,6 +628,13 @@ struct YR_SCAN_CONTEXT
   // constant. Each thread using a YR_RULES get assigned a unique thread index
   // in the range [0, YR_MAX_THREADS)
   int tidx;
+
+  // Canary value used for preventing hand-crafted objects from being embedded
+  // in compiled rules and used to exploit YARA. The canary value is initialized
+  // to a random value and is subsequently set to all objects created by
+  // yr_object_create. The canary is verified when objects are used by
+  // yr_execute_code.
+  int canary;
 
   // Scan timeout in nanoseconds.
   uint64_t timeout;

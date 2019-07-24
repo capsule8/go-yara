@@ -264,7 +264,8 @@ YR_API void yr_compiler_destroy(
   yr_arena_destroy(compiler->automaton_arena);
   yr_arena_destroy(compiler->matches_arena);
 
-  yr_ac_automaton_destroy(compiler->automaton);
+  if (compiler->automaton != NULL)
+    yr_ac_automaton_destroy(compiler->automaton);
 
   yr_hash_table_destroy(
       compiler->rules_table,
@@ -397,6 +398,12 @@ YR_API int yr_compiler_load_atom_quality_table(
   fseek(fh, 0L, SEEK_END);
   file_size = ftell(fh);
   fseek(fh, 0L, SEEK_SET);
+
+  if (file_size == -1L)
+  {
+    fclose(fh);
+    return ERROR_COULD_NOT_READ_FILE;
+  }
 
   table = yr_malloc(file_size);
 
@@ -871,6 +878,9 @@ int _yr_compiler_define_variable(
 
   char* id;
 
+  if (external->identifier == NULL)
+    return ERROR_INVALID_ARGUMENT;
+
   object = (YR_OBJECT*) yr_hash_table_lookup(
       compiler->objects_table,
       external->identifier,
@@ -898,6 +908,9 @@ int _yr_compiler_define_variable(
   if (external->type == EXTERNAL_VARIABLE_TYPE_STRING)
   {
     char* val;
+
+    if (external->value.s == NULL)
+      return ERROR_INVALID_ARGUMENT;
 
     FAIL_ON_ERROR(yr_arena_write_string(
         compiler->sz_arena,

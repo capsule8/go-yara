@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2007-2015. The YARA Authors. All Rights Reserved.
+Copyright (c) 2018. The YARA Authors. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -27,60 +27,46 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef YR_FILEMAP_H
-#define YR_FILEMAP_H
+#ifndef YR_STACK_H
+#define YR_STACK_H
 
-#include <sys/types.h>
+typedef struct YR_STACK YR_STACK;
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#include <windows.h>
-#define YR_FILE_DESCRIPTOR    HANDLE
-#else
-#define YR_FILE_DESCRIPTOR    int
-#endif
-
-#include <stdlib.h>
-
-#include <yara_integers.h>
-#include <yara_utils.h>
-
-
-typedef struct _YR_MAPPED_FILE
+struct YR_STACK
 {
-  YR_FILE_DESCRIPTOR  file;
-  size_t              size;
-  const uint8_t*      data;
-  #if defined(_WIN32) || defined(__CYGWIN__)
-  HANDLE              mapping;
-  #endif
+    // Pointer to a heap-allocated array containing the void* values put in
+    // in the stack. This array starts with a fixed size and it's grown as
+    // required when new items are pushed into the stack.
+    void* items;
 
-} YR_MAPPED_FILE;
+    // Current capacity (i.e: the number of items that fit into the array)
+    int capacity;
 
+    // Size of each individual item in the stack.
+    int item_size;
 
-YR_API int yr_filemap_map(
-    const char* file_path,
-    YR_MAPPED_FILE* pmapped_file);
-
-
-YR_API int yr_filemap_map_fd(
-    YR_FILE_DESCRIPTOR file,
-    off_t offset,
-    size_t size,
-    YR_MAPPED_FILE* pmapped_file);
+    // Index of the stack's top in the items array.
+    int top;
+};
 
 
-YR_API int yr_filemap_map_ex(
-    const char* file_path,
-    off_t offset,
-    size_t size,
-    YR_MAPPED_FILE* pmapped_file);
+int yr_stack_create(
+    int initial_capacity,
+    int item_size,
+    YR_STACK** stack);
 
 
-YR_API void yr_filemap_unmap(
-    YR_MAPPED_FILE* pmapped_file);
+void yr_stack_destroy(
+    YR_STACK* stack);
 
 
-YR_API void yr_filemap_unmap_fd(
-    YR_MAPPED_FILE* pmapped_file);
+int yr_stack_push(
+    YR_STACK* stack,
+    void* item);
+
+
+int yr_stack_pop(
+    YR_STACK* stack,
+    void* item);
 
 #endif

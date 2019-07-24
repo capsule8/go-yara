@@ -32,14 +32,14 @@ index 759112e..eca8d35 100644
  
  // log2 is not defined by math.h in VC++
  
--#ifdef _MSC_VER
--double log2(double n)
+-#if defined(_MSC_VER) && _MSC_VER < 1800
+-static double log2(double n)
 + // A fast approximate log2 function:
 + // https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastlog.h
 + // Having it here removes the need to link to the math library and
 + // reduces our depenencies while being good enough for entropy
 + // detection.
-+double log2 (double x)
++static double log2 (double x)
  {
 -  return log(n) / log(2.0);
 +    union { float f; uint32_t i; } vx = { x };

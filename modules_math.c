@@ -27,6 +27,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <math.h>
+
 #include <yara_utils.h>
 #include <yara_modules.h>
 #include <yara_mem.h>
@@ -42,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  // Having it here removes the need to link to the math library and
  // reduces our depenencies while being good enough for entropy
  // detection.
-double log2 (double x)
+static double log2 (double x)
 {
     union { float f; uint32_t i; } vx = { x };
     union { uint32_t i; float f; } mx = { (vx.i & 0x007FFFFF) | 0x3f000000 };
