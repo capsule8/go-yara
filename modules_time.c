@@ -27,8 +27,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <yara_modules.h>
 #include <time.h>
+
+#include <yara_modules.h>
 
 #define MODULE_NAME time
 

@@ -30,5 +30,5 @@ cp yara_src/libyara/proc/linux.c proc_linux.c
 cp yara_src/libyara/proc/windows.c proc_windows.c
 cp yara_src/libyara/proc/mach.c proc_darwin.c
 
-sed -i 's/yara\//yara_/g' *.h *.c
-sed -i 's/modules\//modules_/g' *.h *.c
+gsed -i 's/yara\//yara_/g' *.h *.c
+gsed -i 's/modules\//modules_/g' *.h *.c

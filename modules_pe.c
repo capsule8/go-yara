@@ -27,8 +27,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <ctype.h>
 #include <time.h>
@@ -42,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/x509.h>
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #define X509_get_signature_nid(o) OBJ_obj2nid((o)->sig_alg->algorithm)
+#define X509_getm_notBefore X509_get_notBefore
+#define X509_getm_notAfter X509_get_notAfter
 #endif
 #endif
 
@@ -1102,8 +1102,11 @@ static EXPORT_FUNCTIONS* pe_parse_exports(
   return exported_functions;
 }
 
-
-#if defined(HAVE_LIBCRYPTO)
+// BoringSSL (https://boringssl.googlesource.com/boringssl/) doesn't support
+// some features used in pe_parse_certificates, if you are using BoringSSL
+// instead of OpenSSL you should define BORINGSSL for YARA to compile properly,
+// but you won't have signature-related features in the PE module.
+#if defined(HAVE_LIBCRYPTO) && !defined(BORINGSSL)
 
 static void pe_parse_certificates(
     PE* pe)
@@ -1185,7 +1188,8 @@ static void pe_parse_certificates(
     }
 
     cert_bio = BIO_new_mem_buf(
-        win_cert->Certificate, yr_le32toh(win_cert->Length) - WIN_CERTIFICATE_HEADER_SIZE);
+        win_cert->Certificate,
+        yr_le32toh(win_cert->Length) - WIN_CERTIFICATE_HEADER_SIZE);
 
     if (!cert_bio)
       break;
@@ -1331,10 +1335,10 @@ static void pe_parse_certificates(
         }
       }
 
-      date_time = ASN1_get_time_t(X509_get_notBefore(cert));
+      date_time = ASN1_get_time_t(X509_getm_notBefore(cert));
       set_integer(date_time, pe->object, "signatures[%i].not_before", counter);
 
-      date_time = ASN1_get_time_t(X509_get_notAfter(cert));
+      date_time = ASN1_get_time_t(X509_getm_notAfter(cert));
       set_integer(date_time, pe->object, "signatures[%i].not_after", counter);
 
       counter++;
@@ -2092,7 +2096,7 @@ define_function(locale)
   PE* pe = (PE*) module->data;
 
   uint64_t locale = integer_argument(1);
-  int n, i;
+  int64_t n, i;
 
   if (is_undefined(module, "number_of_resources"))
     return_integer(UNDEFINED);
@@ -2106,7 +2110,8 @@ define_function(locale)
 
   for (i = 0; i < n; i++)
   {
-    uint64_t rsrc_language = get_integer(module, "resources[%i].language", i);
+    uint64_t rsrc_language = get_integer(
+        module, "resources[%" PRId64 "].language", i);
 
     if ((rsrc_language & 0xFFFF) == locale)
       return_integer(1);
@@ -2122,7 +2127,7 @@ define_function(language)
   PE* pe = (PE*) module->data;
 
   uint64_t language = integer_argument(1);
-  int n, i;
+  int64_t n, i;
 
   if (is_undefined(module, "number_of_resources"))
     return_integer(UNDEFINED);
@@ -2136,7 +2141,8 @@ define_function(language)
 
   for (i = 0; i < n; i++)
   {
-    uint64_t rsrc_language = get_integer(module, "resources[%i].language", i);
+    uint64_t rsrc_language = get_integer(
+        module, "resources[%" PRId64 "].language", i);
 
     if ((rsrc_language & 0xFF) == language)
       return_integer(1);
@@ -2183,17 +2189,25 @@ define_function(is_64bit)
 }
 
 
-static uint64_t rich_internal(
+// _rich_version
+//
+// Returns the number of rich signatures that match the specified version and
+// toolid numbers.
+//
+static uint64_t _rich_version(
     YR_OBJECT* module,
     uint64_t version,
     uint64_t toolid)
 {
   int64_t rich_length;
   int64_t rich_count;
+
   int i;
 
   PRICH_SIGNATURE clear_rich_signature;
   SIZED_STRING* rich_string;
+
+  uint64_t result = 0;
 
   // Check if the required fields are set
   if (is_undefined(module, "rich_signature.length"))
@@ -2223,55 +2237,42 @@ static uint64_t rich_internal(
     int match_version = (version == RICH_VERSION_VERSION(id_version));
     int match_toolid = (toolid == RICH_VERSION_ID(id_version));
 
-    if (version != UNDEFINED && toolid != UNDEFINED)
+    if ((version == UNDEFINED || match_version) &&
+        (toolid == UNDEFINED || match_toolid))
     {
-      // check version and toolid
-      if (match_version && match_toolid)
-        return true;
-    }
-    else if (version != UNDEFINED)
-    {
-      // check only version
-      if (match_version)
-        return true;
-    }
-    else if (toolid != UNDEFINED)
-    {
-      // check only toolid
-      if (match_toolid)
-        return true;
+      result += yr_le32toh(clear_rich_signature->versions[i].times);
     }
   }
 
-  return false;
+  return result;
 }
 
 
 define_function(rich_version)
 {
   return_integer(
-      rich_internal(module(), integer_argument(1), UNDEFINED));
+      _rich_version(module(), integer_argument(1), UNDEFINED));
 }
 
 
 define_function(rich_version_toolid)
 {
   return_integer(
-      rich_internal(module(), integer_argument(1), integer_argument(2)));
+      _rich_version(module(), integer_argument(1), integer_argument(2)));
 }
 
 
 define_function(rich_toolid)
 {
   return_integer(
-      rich_internal(module(), UNDEFINED, integer_argument(1)));
+      _rich_version(module(), UNDEFINED, integer_argument(1)));
 }
 
 
 define_function(rich_toolid_version)
 {
   return_integer(
-      rich_internal(module(), integer_argument(2), integer_argument(1)));
+      _rich_version(module(), integer_argument(2), integer_argument(1)));
 }
 
 
@@ -2598,7 +2599,7 @@ begin_declarations;
 
   declare_integer("number_of_resources");
 
-  #if defined(HAVE_LIBCRYPTO)
+  #if defined(HAVE_LIBCRYPTO) && !defined(BORINGSSL)
   begin_struct_array("signatures");
     declare_string("thumbprint");
     declare_string("issuer");
@@ -3011,7 +3012,7 @@ int module_load(
         pe_parse_header(pe, block->base, context->flags);
         pe_parse_rich_signature(pe, block->base);
 
-        #if defined(HAVE_LIBCRYPTO)
+        #if defined(HAVE_LIBCRYPTO) && !defined(BORINGSSL)
         pe_parse_certificates(pe);
         #endif
 
