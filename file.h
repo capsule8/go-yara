@@ -33,6 +33,8 @@
 #ifndef __file_h__
 #define __file_h__
 
+#include <stdint.h>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
