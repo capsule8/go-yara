@@ -84,18 +84,71 @@ index 0c447c6..b263ae8 100644
  #include <openssl/safestack.h>
  #include <openssl/asn1.h>
 diff --git a/libyara/modules/hash/hash.c b/libyara/modules/hash/hash.c
-index 8b33dc56..7a9eb0ad 100644
+index 8b33dc56..900a48b6 100644
 --- a/libyara/modules/hash/hash.c
 +++ b/libyara/modules/hash/hash.c
-@@ -27,7 +27,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+@@ -27,7 +27,48 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 -#include "../crypto.h"
 +#include "crypto.h"
++
++#ifndef yr_md5_init
++typedef struct {} yr_md5_ctx;
++typedef struct {} yr_sha1_ctx;
++typedef struct {} yr_sha256_ctx;
++
++#define yr_md5_init(ctx) \
++ (void)ctx
++#define yr_md5_update(ctx,data,len) \
++ (void)ctx
++#define yr_md5_final(digest,ctx) { \
++ (void)ctx; \
++ for (int i = 0; i < YR_MD5_LEN; i++) { \
++   digest[i] = '\0'; \
++ } \
++}
++
++#define yr_sha1_init(ctx) \
++ (void)ctx
++#define yr_sha1_update(ctx,data,len) \
++ (void)ctx
++#define yr_sha1_final(digest,ctx) { \
++ (void)ctx; \
++ for (int i = 0; i < YR_SHA1_LEN; i++) { \
++   digest[i] = '\0'; \
++ } \
++}
++
++#define yr_sha256_init(ctx) \
++ (void)ctx
++#define yr_sha256_update(ctx,data,len) \
++ (void)ctx
++#define yr_sha256_final(digest,ctx) { \
++ (void)ctx; \
++ for (int i = 0; i < YR_SHA256_LEN; i++) { \
++   digest[i] = '\0'; \
++ } \
++}
++
++#endif
++
+
+ #include <yara/mem.h>
+ #include <yara/modules.h>diff --git a/libyara/modules/magic/magic.c b/libyara/modules/magic/magic.c
+index 5d9ba978..b3e48c69 100644
+--- a/libyara/modules/magic/magic.c
++++ b/libyara/modules/magic/magic.c
+@@ -35,7 +35,7 @@ The original idea and inspiration for this module comes from Armin Buescher.
 
  #include <yara/mem.h>
  #include <yara/modules.h>
+-#include <magic.h>
++#include "file_magic.h"
+
+ #define MODULE_NAME magic
+
 diff --git a/libyara/proc/linux.c b/libyara/proc/linux.c
 index a719ad2..4e398f6 100644
 --- a/libyara/proc/linux.c

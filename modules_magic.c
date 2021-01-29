@@ -35,7 +35,7 @@ The original idea and inspiration for this module comes from Armin Buescher.
 
 #include <yara_mem.h>
 #include <yara_modules.h>
-#include <magic.h>
+#include "file_magic.h"
 
 #define MODULE_NAME magic
 
