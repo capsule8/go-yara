@@ -1,4 +1,4 @@
-// Copyright © 2015-2019 Hilko Bengen <bengen@hilluzination.de>
+// Copyright © 2015-2020 Hilko Bengen <bengen@hilluzination.de>
 // All rights reserved.
 //
 // Use of this source code is governed by the license that can be
@@ -10,17 +10,19 @@ package yara
 #include <yara.h>
 
 // rule_identifier is a union accessor function.
+// (CGO does not represent them properly to Go code.)
 static const char* rule_identifier(YR_RULE* r) {
 	return r->identifier;
 }
 
 // rule_namespace is a union accessor function.
+// (CGO does not represent them properly to Go code.)
 static const char* rule_namespace(YR_RULE* r) {
 	return r->ns->name;
 }
 
 // rule_tags returns pointers to the tag names associated with a rule,
-// using YARA's own implementation
+// using YARA's own implementation.
 static void rule_tags(YR_RULE* r, const char *tags[], int *n) {
 	const char *tag;
 	int i = 0;
@@ -34,7 +36,7 @@ static void rule_tags(YR_RULE* r, const char *tags[], int *n) {
 }
 
 // rule_tags returns pointers to the meta variables associated with a
-// rule, using YARA's own implementation
+// rule, using YARA's own implementation.
 static void rule_metas(YR_RULE* r, const YR_META *metas[], int *n) {
 	const YR_META *meta;
 	int i = 0;
@@ -47,16 +49,16 @@ static void rule_metas(YR_RULE* r, const YR_META *metas[], int *n) {
 	return;
 }
 
-// meta_get is an accessor function for unions that are not directly
-// accessible from Go because CGO does not understand them.
+// meta_get is a union accessor function.
+// (CGO does not represent them properly to Go code.)
 static void meta_get(YR_META *m, const char** identifier, char** string) {
 	*identifier = m->identifier;
-	*string = m->string;
+	*string = (char*)m->string;
 	return;
 }
 
 // rule_strings returns pointers to the matching strings associated
-// with a rule, using YARA's own implementation.
+// with a rule, using YARA's macro-based implementation.
 static void rule_strings(YR_RULE* r, const YR_STRING *strings[], int *n) {
 	const YR_STRING *string;
 	int i = 0;
@@ -70,15 +72,17 @@ static void rule_strings(YR_RULE* r, const YR_STRING *strings[], int *n) {
 }
 
 // string_identifier is a union accessor function.
+// (CGO does not represent them properly to Go code.)
 static const char* string_identifier(YR_STRING* s) {
 	return s->identifier;
 }
 
-// string_matches
-static void string_matches(YR_STRING* s, const YR_MATCH *matches[], int *n) {
+// string_matches returns pointers to the string match objects
+// associated with a string, using YARA's macro-based implementation.
+static void string_matches(YR_SCAN_CONTEXT *ctx, YR_STRING* s, const YR_MATCH *matches[], int *n) {
 	const YR_MATCH *match;
 	int i = 0;
-	yr_string_matches_foreach(s, match) {
+	yr_string_matches_foreach(ctx, s, match) {
 		if (i < *n)
 			matches[i] = match;
 		i++;
@@ -87,10 +91,28 @@ static void string_matches(YR_STRING* s, const YR_MATCH *matches[], int *n) {
 	return;
 }
 
+// get_rules returns pointers to the RULE objects for a ruleset, using
+// YARA's macro-based implementation.
+static void get_rules(YR_RULES *ruleset, const YR_RULE *rules[], int *n) {
+	const YR_RULE *rule;
+	int i = 0;
+	yr_rules_foreach(ruleset, rule) {
+		if (i < *n)
+			rules[i] = rule;
+		i++;
+	}
+	*n = i;
+	return;
+}
+
 */
 import "C"
+import "unsafe"
 
-// Rule represents a single rule as part of a ruleset
+// Rule represents a single rule as part of a ruleset.
+//
+// Since this type contains a C pointer to a YR_RULE structure that
+// may be automatically freed, it should not be copied.
 type Rule struct{ cptr *C.YR_RULE }
 
 // Identifier returns the rule's name.
@@ -118,13 +140,16 @@ func (r *Rule) Tags() (tags []string) {
 	return
 }
 
-// Metas returns a map containing the rule's meta variables. Values
-// can be of type string, int, bool, or nil.
-//
-// If a rule contains multiple meta variables with the same name, only
-// the last meta variable is returned as part of the map.
-func (r *Rule) Metas() (metas map[string]interface{}) {
-	metas = make(map[string]interface{})
+// Meta represents a rule meta variable. Value can be of type string,
+// int, boolean, or nil.
+type Meta struct {
+	Identifier string
+	Value      interface{}
+}
+
+// Metas returns the rule's meta variables as a list of Meta
+// objects.
+func (r *Rule) Metas() (metas []Meta) {
 	var size C.int
 	C.rule_metas(r.cptr, nil, &size)
 	if size == 0 {
@@ -132,38 +157,41 @@ func (r *Rule) Metas() (metas map[string]interface{}) {
 	}
 	mptrs := make([]*C.YR_META, int(size))
 	C.rule_metas(r.cptr, &mptrs[0], &size)
-	for _, m := range mptrs {
+	for _, cptr := range mptrs {
 		var cid, cstr *C.char
-		C.meta_get(m, &cid, &cstr)
+		C.meta_get(cptr, &cid, &cstr)
 		id := C.GoString(cid)
-		switch m._type {
-		case C.META_TYPE_NULL:
-			metas[id] = nil
+		var val interface{}
+		switch cptr._type {
 		case C.META_TYPE_STRING:
-			metas[id] = C.GoString(cstr)
+			val = C.GoString(cstr)
 		case C.META_TYPE_INTEGER:
-			metas[id] = int(m.integer)
+			val = int(cptr.integer)
 		case C.META_TYPE_BOOLEAN:
-			metas[id] = m.integer != 0
+			val = (cptr.integer != 0)
 		}
+		metas = append(metas, Meta{id, val})
 	}
 	return
 }
 
-// IsPrivate returns true if the rule is marked as private
+// IsPrivate returns true if the rule is marked as private.
 func (r *Rule) IsPrivate() bool {
-	return (r.cptr.g_flags & C.RULE_GFLAGS_PRIVATE) != 0
+	return r.cptr.flags&C.RULE_FLAGS_PRIVATE != 0
 }
 
-// IsGlobal returns true if the rule is marked as global
+// IsGlobal returns true if the rule is marked as global.
 func (r *Rule) IsGlobal() bool {
-	return (r.cptr.g_flags & C.RULE_GFLAGS_GLOBAL) != 0
+	return r.cptr.flags&C.RULE_FLAGS_GLOBAL != 0
 }
 
-// String represents a string as part of a rule
+// String represents a string as part of a rule.
+//
+// Since this type contains a C pointer to a YR_STRING structure that
+// may be automatically freed, it should not be copied.
 type String struct{ cptr *C.YR_STRING }
 
-// Strings returns the rule's strings
+// Strings returns the rule's strings.
 func (r *Rule) Strings() (strs []String) {
 	var size C.int
 	C.rule_strings(r.cptr, nil, &size)
@@ -178,43 +206,87 @@ func (r *Rule) Strings() (strs []String) {
 	return
 }
 
-// Identifier returns the string's name
+// Identifier returns the string's name.
 func (s *String) Identifier() string {
 	return C.GoString(C.string_identifier(s.cptr))
 }
 
-// Match represents a string match
+// Match represents a string match.
+//
+// Since this type contains a C pointer to a YR_MATCH structure that
+// may be automatically freed, it should not be copied.
 type Match struct{ cptr *C.YR_MATCH }
 
 // Matches returns all matches that have been recorded for the string.
-func (s *String) Matches() (matches []Match) {
+func (s *String) Matches(sc *ScanContext) (matches []Match) {
+	if sc == nil || sc.cptr == nil {
+		return
+	}
 	var size C.int
-	C.string_matches(s.cptr, nil, &size)
+	C.string_matches(sc.cptr, s.cptr, nil, &size)
 	ptrs := make([]*C.YR_MATCH, int(size))
 	if size == 0 {
 		return
 	}
-	C.string_matches(s.cptr, &ptrs[0], &size)
+	C.string_matches(sc.cptr, s.cptr, &ptrs[0], &size)
 	for _, ptr := range ptrs {
 		matches = append(matches, Match{ptr})
 	}
 	return
 }
 
-// Offset returns the offset at which the string match occurred
+// Base returns the base offset of the memory block in which the
+// string match occurred.
+func (m *Match) Base() int64 {
+	return int64(m.cptr.base)
+}
+
+// Offset returns the offset at which the string match occurred.
 func (m *Match) Offset() int64 {
 	return int64(m.cptr.offset)
 }
 
-func (r *Rule) getMatchStrings() (matchstrings []MatchString) {
+// Data returns the blob of data associated with the string match.
+func (m *Match) Data() []byte {
+	return C.GoBytes(unsafe.Pointer(m.cptr.data), C.int(m.cptr.data_length))
+}
+
+func (r *Rule) getMatchStrings(sc *ScanContext) (matchstrings []MatchString) {
 	for _, s := range r.Strings() {
-		for _, m := range s.Matches() {
+		for _, m := range s.Matches(sc) {
 			matchstrings = append(matchstrings, MatchString{
 				Name:   s.Identifier(),
+				Base:   uint64(m.Base()),
 				Offset: uint64(m.Offset()),
 				Data:   m.Data(),
 			})
 		}
+	}
+	return
+}
+
+// Enable enables a single rule.
+func (r *Rule) Enable() {
+	C.yr_rule_enable(r.cptr)
+}
+
+// Disable disables a single rule.
+func (r *Rule) Disable() {
+	C.yr_rule_disable(r.cptr)
+}
+
+// GetRules returns a slice of rule objects that are part of the
+// ruleset.
+func (r *Rules) GetRules() (rules []Rule) {
+	var size C.int
+	C.get_rules(r.cptr, nil, &size)
+	if size == 0 {
+		return
+	}
+	ptrs := make([]*C.YR_RULE, int(size))
+	C.get_rules(r.cptr, &ptrs[0], &size)
+	for _, ptr := range ptrs {
+		rules = append(rules, Rule{ptr})
 	}
 	return
 }
