@@ -69,6 +69,7 @@ typedef struct {} yr_sha256_ctx;
 
 #endif
 
+
 #include <yara_mem.h>
 #include <yara_modules.h>
 
@@ -282,7 +283,7 @@ define_function(data_md5)
   yr_md5_init(&md5_context);
 
   if (offset < 0 || length < 0 || offset < block->base)
-    return_string(UNDEFINED);
+    return_string(YR_UNDEFINED);
 
   cached_ascii_digest = get_from_cache(
       module(), "md5", arg_offset, arg_length);
@@ -321,7 +322,7 @@ define_function(data_md5)
       // range contains gaps of undefined data the checksum is
       // undefined.
 
-      return_string(UNDEFINED);
+      return_string(YR_UNDEFINED);
     }
 
     if (block->base + block->size > offset + length)
@@ -329,7 +330,7 @@ define_function(data_md5)
   }
 
   if (!past_first_block)
-    return_string(UNDEFINED);
+    return_string(YR_UNDEFINED);
 
   yr_md5_final(digest, &md5_context);
 
@@ -365,7 +366,7 @@ define_function(data_sha1)
   yr_sha1_init(&sha_context);
 
   if (offset < 0 || length < 0 || offset < block->base)
-    return_string(UNDEFINED);
+    return_string(YR_UNDEFINED);
 
   cached_ascii_digest = get_from_cache(
       module(), "sha1", arg_offset, arg_length);
@@ -403,7 +404,7 @@ define_function(data_sha1)
       // range contains gaps of undefined data the checksum is
       // undefined.
 
-      return_string(UNDEFINED);
+      return_string(YR_UNDEFINED);
     }
 
     if (block->base + block->size > offset + length)
@@ -411,7 +412,7 @@ define_function(data_sha1)
   }
 
   if (!past_first_block)
-    return_string(UNDEFINED);
+    return_string(YR_UNDEFINED);
 
   yr_sha1_final(digest, &sha_context);
 
@@ -447,7 +448,7 @@ define_function(data_sha256)
   yr_sha256_init(&sha256_context);
 
   if (offset < 0 || length < 0 || offset < block->base)
-    return_string(UNDEFINED);
+    return_string(YR_UNDEFINED);
 
   cached_ascii_digest = get_from_cache(
       module(), "sha256", arg_offset, arg_length);
@@ -484,7 +485,7 @@ define_function(data_sha256)
       // range contains gaps of undefined data the checksum is
       // undefined.
 
-      return_string(UNDEFINED);
+      return_string(YR_UNDEFINED);
     }
 
     if (block->base + block->size > offset + length)
@@ -492,7 +493,7 @@ define_function(data_sha256)
   }
 
   if (!past_first_block)
-    return_string(UNDEFINED);
+    return_string(YR_UNDEFINED);
 
   yr_sha256_final(digest, &sha256_context);
 
@@ -518,7 +519,7 @@ define_function(data_checksum32)
   int past_first_block = false;
 
   if (offset < 0 || length < 0 || offset < block->base)
-    return_integer(UNDEFINED);
+    return_integer(YR_UNDEFINED);
 
   foreach_memory_block(iterator, block)
   {
@@ -551,7 +552,7 @@ define_function(data_checksum32)
       // range contains gaps of undefined data the checksum is
       // undefined.
 
-      return_integer(UNDEFINED);
+      return_integer(YR_UNDEFINED);
     }
 
     if (block->base + block->size > offset + length)
@@ -559,7 +560,7 @@ define_function(data_checksum32)
   }
 
   if (!past_first_block)
-    return_integer(UNDEFINED);
+    return_integer(YR_UNDEFINED);
 
   return_integer(checksum);
 }
@@ -591,7 +592,7 @@ define_function(data_crc32)
   int past_first_block = false;
 
   if (offset < 0 || length < 0 || offset < block->base)
-    return_integer(UNDEFINED);
+    return_integer(YR_UNDEFINED);
 
   foreach_memory_block(iterator, block)
   {
@@ -624,7 +625,7 @@ define_function(data_crc32)
       // range contains gaps of undefined data the checksum is
       // undefined.
 
-      return_integer(UNDEFINED);
+      return_integer(YR_UNDEFINED);
     }
 
     if (block->base + block->size > offset + length)
@@ -632,7 +633,7 @@ define_function(data_crc32)
   }
 
   if (!past_first_block)
-    return_integer(UNDEFINED);
+    return_integer(YR_UNDEFINED);
 
   return_integer(checksum ^ 0xFFFFFFFF);
 }

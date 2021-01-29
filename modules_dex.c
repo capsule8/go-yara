@@ -1,15 +1,20 @@
 /*
 Copyright (c) 2018. The YARA Authors. All Rights Reserved.
+
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
+
 1. Redistributions of source code must retain the above copyright notice, this
 list of conditions and the following disclaimer.
+
 2. Redistributions in binary form must reproduce the above copyright notice,
 this list of conditions and the following disclaimer in the documentation and/or
 other materials provided with the distribution.
+
 3. Neither the name of the copyright holder nor the names of its contributors
 may be used to endorse or promote products derived from this software without
 specific prior written permission.
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -260,12 +265,12 @@ static int64_t dex_get_integer(
      const char* pattern,
      int64_t index)
 {
-  if (index == UNDEFINED)
-    return UNDEFINED;
+  if (index == YR_UNDEFINED)
+    return YR_UNDEFINED;
 
   // Impose a reasonably large limit to table indexes.
   if (index > 0x80000)
-    return UNDEFINED;
+    return YR_UNDEFINED;
 
   return get_integer(object, pattern, (int) index);
 }
@@ -276,7 +281,7 @@ static SIZED_STRING* dex_get_string(
      const char* pattern,
      int64_t index)
 {
-  if (index == UNDEFINED)
+  if (index == YR_UNDEFINED)
     return NULL;
 
   // Impose a reasonably large limit to table indexes.
@@ -437,7 +442,7 @@ uint32_t load_encoded_field(
   int64_t name_idx = dex_get_integer(
       dex->object, "field_ids[%i].name_idx", *previous_field_idx);
 
-  if (name_idx == UNDEFINED)
+  if (name_idx == YR_UNDEFINED)
     return 0;
 
   SIZED_STRING* field_name = dex_get_string(
@@ -577,7 +582,7 @@ uint32_t load_encoded_method(
   int64_t name_idx = dex_get_integer(
       dex->object, "method_ids[%i].name_idx", *previous_method_idx);
 
-  if (name_idx == UNDEFINED)
+  if (name_idx == YR_UNDEFINED)
     return 0;
 
   #ifdef DEBUG_DEX_MODULE
@@ -942,7 +947,7 @@ void dex_parse(
            yr_le32toh(class_id_item->class_idx),
            yr_le32toh(class_id_item->access_flags),
            yr_le32toh(class_id_item->super_class_idx),
-           yr_le32toh(class_id_item->interfaces_off),
+           yr_le32toh(class_id_item->interfaces_offset),
            yr_le32toh(class_id_item->source_file_idx),
            yr_le32toh(class_id_item->annotations_offset),
            yr_le32toh(class_id_item->class_data_offset),
@@ -955,7 +960,7 @@ void dex_parse(
                 "class_defs[%i].access_flags", i);
     set_integer(yr_le32toh(class_id_item->super_class_idx), dex->object,
                 "class_defs[%i].super_class_idx", i);
-    set_integer(yr_le32toh(class_id_item->interfaces_off), dex->object,
+    set_integer(yr_le32toh(class_id_item->interfaces_offset), dex->object,
                 "class_defs[%i].interfaces_offset", i);
     set_integer(yr_le32toh(class_id_item->source_file_idx), dex->object,
                 "class_defs[%i].source_file_idx", i);

@@ -22,7 +22,7 @@ for i in yara_src/libyara/include/yara/*.h; do
     cp $i yara_`basename $i`
 done
 
-for i in yara_src/libyara/modules/{test,pe,elf,math,time}*/*.c; do
+for i in yara_src/libyara/modules/{test,dex,hash,macho,magic,pe,elf,math,time}*/*.c; do
     cp $i modules_`basename $i`
 done
 

@@ -6,7 +6,7 @@
 
 package yara
 
-// #cgo CFLAGS: -D_FILE_OFFSET_BITS=64 -DDOTNET_MODULE -DMAGIC_MODULE -DHASH_MODULE -DMACHO_MODULE -DDEX_MODULE -DHAVE_UNISTD_H
+// #cgo CFLAGS: -D_FILE_OFFSET_BITS=64 -DDOTNET_MODULE -DMAGIC_MODULE -DHASH_MODULE -DMACHO_MODULE -DDEX_MODULE -DHAVE_UNISTD_H -DHAVE_STDBOOL_H
 // #cgo !yara_no_pkg_config,!yara_static  pkg-config: yara
 // #cgo !yara_no_pkg_config,yara_static   pkg-config: --static yara
 // #cgo yara_no_pkg_config                LDFLAGS:    -lyara

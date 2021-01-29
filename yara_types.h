@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <yara_sizedstr.h>
 #include <yara_stopwatch.h>
 #include <yara_threading.h>
-#include "notebook.h"
+#include "yara_notebook.h"
 
 
 #define DECLARE_REFERENCE(type, name) \

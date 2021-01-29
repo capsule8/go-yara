@@ -26,6 +26,7 @@ index abfa986..b04dd54 100644
  int yr_parser_emit(
 diff --git a/libyara/modules/math/math.c b/libyara/modules/math/math.c
 index 759112e..eca8d35 100644
+
 --- a/libyara/modules/math/math.c
 +++ b/libyara/modules/math/math.c
 @@ -39,13 +39,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -56,6 +57,19 @@ index 759112e..eca8d35 100644
  
  define_function(string_entropy)
  {
+diff --git a/libyara/include/yara/types.h b/libyara/include/yara/types.h
+index 65009a84..a64a60fa 100644
+--- a/libyara/include/yara/types.h
++++ b/libyara/include/yara/types.h
+@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <yara/sizedstr.h>
+ #include <yara/stopwatch.h>
+ #include <yara/threading.h>
+-#include "notebook.h"
++#include "yara/notebook.h"
+
+
+ #define DECLARE_REFERENCE(type, name) \
 diff --git a/libyara/modules/pe/pe.c b/libyara/modules/pe/pe.c
 index 0c447c6..b263ae8 100644
 --- a/libyara/modules/pe/pe.c
@@ -69,6 +83,19 @@ index 0c447c6..b263ae8 100644
  #if defined(HAVE_LIBCRYPTO)
  #include <openssl/safestack.h>
  #include <openssl/asn1.h>
+diff --git a/libyara/modules/hash/hash.c b/libyara/modules/hash/hash.c
+index 8b33dc56..7a9eb0ad 100644
+--- a/libyara/modules/hash/hash.c
++++ b/libyara/modules/hash/hash.c
+@@ -27,7 +27,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+-#include "../crypto.h"
++#include "crypto.h"
+
+ #include <yara/mem.h>
+ #include <yara/modules.h>
 diff --git a/libyara/proc/linux.c b/libyara/proc/linux.c
 index a719ad2..4e398f6 100644
 --- a/libyara/proc/linux.c
