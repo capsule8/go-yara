@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # This script updates the current repository to the latest version of
 # yara.
@@ -9,7 +10,6 @@ git submodule update
 cd yara_src/
 echo Resetting the yara source tree.
 git reset --hard
-
 echo Applying patches.
 patch -p1 < ../yara_src.diff
 cd -
@@ -22,7 +22,7 @@ for i in yara_src/libyara/include/yara/*.h; do
     cp $i yara_`basename $i`
 done
 
-for i in yara_src/libyara/modules/{test,pe,elf,math,time,module_list}*; do
+for i in yara_src/libyara/modules/{test,pe,elf,math,time}*/*.c; do
     cp $i modules_`basename $i`
 done
 

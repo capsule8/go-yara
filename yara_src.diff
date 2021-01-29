@@ -24,10 +24,10 @@ index abfa986..b04dd54 100644
  
  
  int yr_parser_emit(
-diff --git a/libyara/modules/math.c b/libyara/modules/math.c
+diff --git a/libyara/modules/math/math.c b/libyara/modules/math/math.c
 index 759112e..eca8d35 100644
---- a/libyara/modules/math.c
-+++ b/libyara/modules/math.c
+--- a/libyara/modules/math/math.c
++++ b/libyara/modules/math/math.c
 @@ -39,13 +39,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
  // log2 is not defined by math.h in VC++
@@ -56,10 +56,10 @@ index 759112e..eca8d35 100644
  
  define_function(string_entropy)
  {
-diff --git a/libyara/modules/pe.c b/libyara/modules/pe.c
+diff --git a/libyara/modules/pe/pe.c b/libyara/modules/pe/pe.c
 index 0c447c6..b263ae8 100644
---- a/libyara/modules/pe.c
-+++ b/libyara/modules/pe.c
+--- a/libyara/modules/pe/pe.c
++++ b/libyara/modules/pe/pe.c
 @@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  #include <ctype.h>
  #include <time.h>
